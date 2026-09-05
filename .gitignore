@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+.deepeval
+.deepeval-*
+.deepeval_*
+.DS_Store
+*.db
+chroma_langchain_db/
