@@ -5,4 +5,5 @@
 - Prefers staging specific changed files (using `git add <specific paths>`) and combining stage + commit in one command rather than staging everything blindly. Confidence: 0.7
 - Willing to knowingly publish potentially sensitive files to an unverified/destination repo when explicitly asked, after being informed of the risk (e.g. approving push of a profile PDF). Confidence: 0.6
 - Reports errors very tersely (e.g. "fix this errror") without pasting the traceback or error text, expecting the agent to dig into the notebook/file and environment to find and diagnose the failure itself. Confidence: 0.6
-- Develops and tests LangChain/RAG work against local Ollama models (`ChatOllama` with `qwen3:8b`, `nomic-embed-text` embeddings via `langchain-ollama` + Chroma) rather than hosted LLM APIs. Confidence: 0.7
+- Develops and tests LangChain/RAG work against local Ollama models (`ChatOllama` with `qwen3:8b`, `nomic-embed-text` embeddings via `langchain-ollama` + Chroma) rather than hosted LLM APIs, and evaluates agents with RAGAS metrics (ContextRecall, Faithfulness) using the same local model as judge. Confidence: 0.8
+ hosted LLM APIs. Confidence: 0.7
