@@ -52,12 +52,6 @@ def wrap_text(
                               each consecutive line.
     :param preserve_paragraphs: if this flag is set then the wrapping will
                                 intelligently handle paragraphs.
-
-    .. versionchanged:: 8.4.0
-        Width is measured in visible characters. ANSI escape sequences in
-        ``text``, ``initial_indent``, or ``subsequent_indent`` no longer
-        count toward the width budget, so styled input wraps based on what
-        the user sees instead of raw byte length.
     """
     from ._textwrap import TextWrapper
 
@@ -119,11 +113,6 @@ class HelpFormatter:
                   width clamped to a maximum of 78.
     """
 
-    indent_increment: int
-    width: int
-    current_indent: int
-    buffer: list[str]
-
     def __init__(
         self,
         indent_increment: int = 2,
@@ -140,8 +129,8 @@ class HelpFormatter:
             if width is None:
                 width = max(min(shutil.get_terminal_size().columns, max_width) - 2, 50)
         self.width = width
-        self.current_indent = 0
-        self.buffer = []
+        self.current_indent: int = 0
+        self.buffer: list[str] = []
 
     def write(self, string: str) -> None:
         """Writes a unicode string into the internal buffer."""
@@ -164,18 +153,10 @@ class HelpFormatter:
             ``"Usage: "``.
         """
         if prefix is None:
-            prefix = "{usage} ".format(usage=_("Usage:"))
+            prefix = f"{_('Usage:')} "
 
         usage_prefix = f"{prefix:>{self.current_indent}}{prog} "
         text_width = self.width - self.current_indent
-
-        if not args:
-            # Without args, the prefix's trailing space and the wrap_text
-            # call that would normally place args on the line are both
-            # unnecessary. Emit just the prefix line.
-            self.write(usage_prefix.rstrip(" "))
-            self.write("\n")
-            return
 
         if text_width >= (term_len(usage_prefix) + 20):
             # The arguments will fit to the right of the prefix.
@@ -228,7 +209,7 @@ class HelpFormatter:
 
     def write_dl(
         self,
-        rows: cabc.Iterable[tuple[str, str]],
+        rows: cabc.Sequence[tuple[str, str]],
         col_max: int = 30,
         col_spacing: int = 2,
     ) -> None:
@@ -271,7 +252,7 @@ class HelpFormatter:
                 self.write("\n")
 
     @contextmanager
-    def section(self, name: str) -> cabc.Generator[None]:
+    def section(self, name: str) -> cabc.Iterator[None]:
         """Helpful context manager that writes a paragraph, a heading,
         and the indents.
 
@@ -286,7 +267,7 @@ class HelpFormatter:
             self.dedent()
 
     @contextmanager
-    def indentation(self) -> cabc.Generator[None]:
+    def indentation(self) -> cabc.Iterator[None]:
         """A context manager that increases the indentation."""
         self.indent()
         try:
@@ -299,7 +280,7 @@ class HelpFormatter:
         return "".join(self.buffer)
 
 
-def join_options(options: cabc.Iterable[str]) -> tuple[str, bool]:
+def join_options(options: cabc.Sequence[str]) -> tuple[str, bool]:
     """Given a list of option strings this joins them in the most appropriate
     way and returns them in the form ``(formatted_string,
     any_prefix_is_slash)`` where the second item in the tuple is a flag that

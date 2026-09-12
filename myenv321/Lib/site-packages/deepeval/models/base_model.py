@@ -1,0 +1,340 @@
+from abc import ABC, abstractmethod
+from typing import (
+    Any,
+    AsyncGenerator,
+    AsyncIterable,
+    Optional,
+    List,
+    Tuple,
+    Union,
+    TYPE_CHECKING,
+)
+from deepeval.models.utils import parse_model_name
+from dataclasses import dataclass
+
+if TYPE_CHECKING:
+    from deepeval.test_case import Audio, AudioChunk
+
+
+@dataclass
+class DeepEvalModelData:
+    supports_log_probs: Optional[bool] = None
+    max_log_probs: Optional[int] = None
+    supports_multimodal: Optional[bool] = None
+    supports_structured_outputs: Optional[bool] = None
+    supports_json: Optional[bool] = None
+    input_price: Optional[float] = None
+    output_price: Optional[float] = None
+    supports_temperature: Optional[bool] = True
+    # True only when the provider lets us turn thinking on and off per request.
+    # Models that always think (and models that never do) leave this unset.
+    supports_thinking: Optional[bool] = None
+
+
+class DeepEvalBaseModel(ABC):
+    def __init__(self, model_name: Optional[str] = None, *args, **kwargs):
+        self.model_name = model_name
+        self.model = self.load_model(*args, **kwargs)
+
+    @abstractmethod
+    def load_model(self, *args, **kwargs) -> "DeepEvalBaseModel":
+        """Loads a model, that will be responsible for scoring.
+
+        Returns:
+            A model object
+        """
+        pass
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        return self._call(*args, **kwargs)
+
+    @abstractmethod
+    def _call(self, *args, **kwargs):
+        """Runs the model to score / output the model predictions.
+
+        Returns:
+            A score or a list of results.
+        """
+        pass
+
+
+class DeepEvalBaseLLM(ABC):
+    def __init__(self, model: Optional[str] = None, *args, **kwargs):
+        self.name = parse_model_name(model)
+        self.model = self.load_model()
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        from deepeval.tracing.internal import observe_methods
+
+        observe_methods(
+            cls,
+            span_type="llm",
+            allowed_methods=[
+                "generate",
+                "a_generate",
+                "generate_raw_response",
+                "a_generate_raw_response",
+                "batch_generate",
+                "generate_samples",
+            ],
+        )
+
+    @abstractmethod
+    def load_model(self, *args, **kwargs) -> "DeepEvalBaseLLM":
+        """Loads a model, that will be responsible for scoring.
+
+        Returns:
+            A model object
+        """
+        pass
+
+    @abstractmethod
+    def generate(self, *args, **kwargs) -> str:
+        """Runs the model to output LLM response.
+
+        Returns:
+            A string.
+        """
+        pass
+
+    @abstractmethod
+    async def a_generate(self, *args, **kwargs) -> str:
+        """Runs the model to output LLM response.
+
+        Returns:
+            A string.
+        """
+        pass
+
+    @abstractmethod
+    def get_model_name(self, *args, **kwargs) -> str:
+        return self.name
+
+    def batch_generate(self, *args, **kwargs) -> List[str]:
+        """Runs the model to output LLM responses.
+
+        Returns:
+            A list of strings.
+        """
+        raise NotImplementedError(
+            "batch_generate is not implemented for this model"
+        )
+
+    # Capabilities
+    def supports_log_probs(self) -> Union[bool, None]:
+        return None
+
+    def supports_temperature(self) -> Union[bool, None]:
+        return None
+
+    def supports_multimodal(self) -> Union[bool, None]:
+        return None
+
+    def supports_structured_outputs(self) -> Union[bool, None]:
+        return None
+
+    def supports_json_mode(self) -> Union[bool, None]:
+        return None
+
+    def generate_with_schema(self, *args, schema=None, **kwargs):
+        if schema is not None:
+            try:
+                return self.generate(*args, schema=schema, **kwargs)
+            except TypeError:
+                pass  # this means provider doesn't accept schema kwarg
+        return self.generate(*args, **kwargs)
+
+    async def a_generate_with_schema(self, *args, schema=None, **kwargs):
+        if schema is not None:
+            try:
+                return await self.a_generate(*args, schema=schema, **kwargs)
+            except TypeError:
+                pass
+        return await self.a_generate(*args, **kwargs)
+
+
+class DeepEvalBaseTTS(ABC):
+    # Sample rate of the audio this model produces. Connectors carrying
+    # synthesized speech have to know it to resample the uplink, so it is
+    # declared here rather than left for each implementation to invent.
+    sample_rate: int = 24000
+
+    def __init__(self, model: Optional[str] = None, *args, **kwargs):
+        self.name = parse_model_name(model)
+        self.model = self.load_model()
+
+    @abstractmethod
+    def load_model(self, *args, **kwargs) -> "DeepEvalBaseTTS":
+        """Loads the text-to-speech client.
+
+        Returns:
+            A model/client object.
+        """
+        pass
+
+    @abstractmethod
+    def synthesize(
+        self, text: str, *args, voice: Optional[str] = None, **kwargs
+    ) -> Tuple["Audio", Optional[float]]:
+        """Synthesizes text into speech.
+
+        Returns:
+            A tuple of (Audio, cost).
+        """
+        pass
+
+    @abstractmethod
+    async def a_synthesize(
+        self, text: str, *args, voice: Optional[str] = None, **kwargs
+    ) -> Tuple["Audio", Optional[float]]:
+        """Synthesizes text into speech asynchronously.
+
+        Returns:
+            A tuple of (Audio, cost).
+        """
+        pass
+
+    async def a_synthesize_stream(
+        self, text: str, *args, voice: Optional[str] = None, **kwargs
+    ) -> AsyncGenerator["AudioChunk", None]:
+        raise NotImplementedError(
+            f"{type(self).__name__} does not support streaming synthesis."
+        )
+        yield  # unreachable; makes this a valid async generator
+
+    def synthesis_cost(self, text: str) -> Optional[float]:
+        """What synthesizing `text` costs.
+
+        A stream yields audio, not a cost, so callers that stream have no other
+        way to account for the spend. Speech is priced on the text going in, so
+        this can be answered without synthesizing anything.
+        """
+        return None
+
+    def supports_streaming(self) -> bool:
+        return False
+
+    @abstractmethod
+    def get_model_name(self, *args, **kwargs) -> str:
+        return self.name
+
+
+class DeepEvalBaseSTT(ABC):
+    # Silence to append before transcribing speech that was cut off mid-word,
+    # as when a barge-in stops a voice agent. Autoregressive transcribers read a
+    # clip ending mid-syllable as an unfinished utterance and complete the word,
+    # inventing speech the caller never heard; a short tail of silence presents
+    # the clip as whole. How much is needed is a property of the transcriber,
+    # and models that do not guess at all (CTC architectures, for one) want
+    # none — leaving this at zero means the audio is transcribed untouched.
+    truncated_audio_pad_seconds: float = 0.0
+
+    def __init__(self, model: Optional[str] = None, *args, **kwargs):
+        self.name = parse_model_name(model)
+        self.model = self.load_model()
+
+    @abstractmethod
+    def load_model(self, *args, **kwargs) -> "DeepEvalBaseSTT":
+        """Loads the speech-to-text client.
+
+        Returns:
+            A model/client object.
+        """
+        pass
+
+    @abstractmethod
+    def transcribe(
+        self, audio: "Audio", *args, **kwargs
+    ) -> Tuple[str, Optional[float]]:
+        """Transcribes speech into text.
+
+        Returns:
+            A tuple of (transcript, cost).
+        """
+        pass
+
+    @abstractmethod
+    async def a_transcribe(
+        self, audio: "Audio", *args, **kwargs
+    ) -> Tuple[str, Optional[float]]:
+        """Transcribes speech into text asynchronously.
+
+        Implementations that accept a `language` keyword should treat
+        `language="auto"` as a request to detect the language per utterance,
+        overriding any language the model was configured with.
+
+        Returns:
+            A tuple of (transcript, cost).
+        """
+        pass
+
+    async def a_transcribe_stream(
+        self, audio_stream: AsyncIterable["AudioChunk"], *args, **kwargs
+    ) -> AsyncGenerator[str, None]:
+        raise NotImplementedError(
+            f"{type(self).__name__} does not support streaming transcription."
+        )
+        yield  # unreachable; makes this a valid async generator
+
+    def supports_streaming(self) -> bool:
+        return False
+
+    @abstractmethod
+    def get_model_name(self, *args, **kwargs) -> str:
+        return self.name
+
+
+class DeepEvalBaseEmbeddingModel(ABC):
+    def __init__(self, model: Optional[str] = None, *args, **kwargs):
+        self.name = parse_model_name(model)
+        self.model = self.load_model()
+
+    @abstractmethod
+    def load_model(self, *args, **kwargs) -> "DeepEvalBaseEmbeddingModel":
+        """Loads a model, that will be responsible for generating text embeddings.
+
+        Returns:
+            A model object
+        """
+        pass
+
+    @abstractmethod
+    def embed_text(self, *args, **kwargs) -> List[float]:
+        """Runs the model to generate text embeddings.
+
+        Returns:
+            A list of float.
+        """
+        pass
+
+    @abstractmethod
+    async def a_embed_text(self, *args, **kwargs) -> List[float]:
+        """Runs the model to generate text embeddings.
+
+        Returns:
+            A list of list of float.
+        """
+        pass
+
+    @abstractmethod
+    def embed_texts(self, *args, **kwargs) -> List[List[float]]:
+        """Runs the model to generate list of text embeddings.
+
+        Returns:
+            A list of float.
+        """
+        pass
+
+    @abstractmethod
+    async def a_embed_texts(self, *args, **kwargs) -> List[List[float]]:
+        """Runs the model to generate list of text embeddings.
+
+        Returns:
+            A list of list of float.
+        """
+        pass
+
+    @abstractmethod
+    def get_model_name(self, *args, **kwargs) -> str:
+        return self.name

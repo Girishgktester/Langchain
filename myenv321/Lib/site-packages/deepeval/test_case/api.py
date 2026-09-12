@@ -1,0 +1,128 @@
+from typing import Union, Optional
+import os
+
+from deepeval.test_run.api import (
+    LLMApiTestCase,
+    ConversationalApiTestCase,
+    TurnApi,
+    TraceApi,
+)
+from deepeval.test_case import (
+    LLMTestCase,
+    ConversationalTestCase,
+    Turn,
+)
+from deepeval.constants import PYTEST_RUN_TEST_NAME
+
+
+def create_api_turn(turn: Turn, index: int) -> TurnApi:
+    retrieval_context = None
+    if turn.retrieval_context:
+        retrieval_context = [
+            rc.context if hasattr(rc, "context") else rc
+            for rc in turn.retrieval_context
+        ]
+    return TurnApi(
+        role=turn.role,
+        content=turn.content,
+        user_id=turn.user_id,
+        retrievalContext=retrieval_context,
+        toolsCalled=turn.tools_called,
+        order=index,
+    )
+
+
+def create_api_test_case(
+    test_case: Union[LLMTestCase, ConversationalTestCase],
+    trace: Optional[TraceApi] = None,
+    index: Optional[int] = None,
+) -> Union[LLMApiTestCase, ConversationalApiTestCase]:
+
+    if isinstance(test_case, ConversationalTestCase):
+        order = (
+            test_case._dataset_rank
+            if test_case._dataset_rank is not None
+            else index
+        )
+        if test_case.name:
+            name = test_case.name
+        else:
+            name = os.getenv(
+                PYTEST_RUN_TEST_NAME, f"conversational_test_case_{order}"
+            )
+
+        api_test_case = ConversationalApiTestCase(
+            name=name,
+            success=True,
+            metricsData=[],
+            runDuration=0,
+            evaluationCost=None,
+            order=order,
+            scenario=test_case.scenario,
+            expectedOutcome=test_case.expected_outcome,
+            userDescription=test_case.user_description,
+            context=test_case.context,
+            tags=test_case.tags,
+            flaky=test_case.flaky,
+            comments=test_case.comments,
+            imagesMapping=test_case._get_images_mapping(),
+            metadata=test_case.metadata,
+        )
+
+        api_test_case.turns = [
+            create_api_turn(
+                turn=turn,
+                index=index,
+            )
+            for index, turn in enumerate(test_case.turns)
+        ]
+
+        return api_test_case
+    else:
+        order = (
+            test_case._dataset_rank
+            if test_case._dataset_rank is not None
+            else index
+        )
+
+        success = True
+        if test_case.name is not None:
+            name = test_case.name
+        else:
+            name = os.getenv(PYTEST_RUN_TEST_NAME, f"test_case_{order}")
+        metrics_data = []
+
+        retrieval_context = None
+        if test_case.retrieval_context:
+            retrieval_context = [
+                rc.context if hasattr(rc, "context") else rc
+                for rc in test_case.retrieval_context
+            ]
+
+        api_test_case = LLMApiTestCase(
+            name=name,
+            input=test_case.input,
+            actualOutput=test_case.actual_output,
+            expectedOutput=test_case.expected_output,
+            retrievalContext=retrieval_context,
+            context=test_case.context,
+            imagesMapping=test_case._get_images_mapping(),
+            toolsCalled=test_case.tools_called,
+            expectedTools=test_case.expected_tools,
+            tokenCost=test_case.token_cost,
+            inputTokenCount=test_case.input_token_count,
+            outputTokenCount=test_case.output_token_count,
+            completionTime=test_case.completion_time,
+            success=success,
+            metricsData=metrics_data,
+            runDuration=None,
+            evaluationCost=None,
+            order=order,
+            metadata=test_case.metadata,
+            comments=test_case.comments,
+            tags=test_case.tags,
+            flaky=test_case.flaky,
+            trace=trace,
+        )
+        # llm_test_case_lookup_map[instance_id] = api_test_case
+        return api_test_case

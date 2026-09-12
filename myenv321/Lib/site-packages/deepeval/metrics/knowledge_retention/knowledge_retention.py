@@ -1,0 +1,329 @@
+from typing import Optional, Union, List, Type
+
+from deepeval.test_case import ConversationalTestCase, Turn, MultiTurnParams
+from deepeval.metrics import BaseConversationalMetric
+from deepeval.metrics.utils import (
+    check_conversational_test_case_params,
+    construct_verbose_logs,
+    initialize_model,
+    convert_turn_to_dict,
+    a_generate_with_schema_and_extract,
+    generate_with_schema_and_extract,
+)
+from deepeval.models import DeepEvalBaseLLM
+from deepeval.metrics.indicator import metric_progress_indicator
+from deepeval.metrics.knowledge_retention.schema import (
+    Knowledge,
+    KnowledgeRetentionVerdict,
+    KnowledgeRetentionScoreReason,
+)
+from deepeval.utils import get_or_create_event_loop, prettify_list
+from deepeval.templates import make_template_class
+
+
+KnowledgeRetentionTemplate = make_template_class("KnowledgeRetentionMetric")
+
+
+class KnowledgeRetentionMetric(BaseConversationalMetric):
+    _required_test_case_params = [MultiTurnParams.CONTENT, MultiTurnParams.ROLE]
+
+    def __init__(
+        self,
+        threshold: Optional[float] = 0.5,
+        model: Optional[Union[str, DeepEvalBaseLLM]] = None,
+        include_reason: bool = True,
+        async_mode: bool = True,
+        strict_mode: bool = False,
+        verbose_mode: bool = False,
+        flaky: bool = False,
+        evaluation_template: Type[
+            KnowledgeRetentionTemplate
+        ] = KnowledgeRetentionTemplate,
+    ):
+        self.threshold = 1 if strict_mode else threshold
+        self.model, self.using_native_model = initialize_model(model)
+        self.evaluation_model = self.model.get_model_name()
+        self.include_reason = include_reason
+        self.async_mode = async_mode
+        self.strict_mode = strict_mode
+        self.verbose_mode = verbose_mode
+        self.flaky = flaky
+        self.evaluation_template = evaluation_template
+
+    def measure(
+        self,
+        test_case: ConversationalTestCase,
+        _show_indicator: bool = True,
+        _in_component: bool = False,
+    ):
+        check_conversational_test_case_params(
+            test_case,
+            self._required_test_case_params,
+            self,
+            False,
+            self.model,
+            test_case.multimodal,
+        )
+
+        self.evaluation_cost = 0 if self.using_native_model else None
+        self.input_tokens = 0 if self.using_native_model else None
+        self.output_tokens = 0 if self.using_native_model else None
+        with metric_progress_indicator(
+            self, _show_indicator=_show_indicator, _in_component=_in_component
+        ):
+            if self.async_mode:
+                loop = get_or_create_event_loop()
+                loop.run_until_complete(
+                    self.a_measure(
+                        test_case,
+                        _show_indicator=False,
+                        _in_component=_in_component,
+                    )
+                )
+            else:
+                self.knowledges: List[Union[Knowledge, None]] = (
+                    self._generate_knowledges(test_case.turns)
+                )
+                self.verdicts: List[KnowledgeRetentionVerdict] = (
+                    self._generate_verdicts(test_case.turns)
+                )
+                self.score = self._calculate_score()
+                self.reason = self._generate_reason()
+                self.success = self.is_successful()
+                self.verbose_logs = construct_verbose_logs(
+                    self,
+                    steps=[
+                        f"Formatted Turns:\n{prettify_list(test_case.turns)}",
+                        f"Knowledges:\n{prettify_list(self.knowledges)}",
+                        f"Verdicts:\n{prettify_list(self.verdicts)}",
+                        f"Score: {self.score}\nReason: {self.reason}",
+                    ],
+                )
+            return self.score
+
+    async def a_measure(
+        self,
+        test_case: ConversationalTestCase,
+        _show_indicator: bool = True,
+        _in_component: bool = False,
+    ) -> float:
+        check_conversational_test_case_params(
+            test_case,
+            self._required_test_case_params,
+            self,
+            False,
+            self.model,
+            test_case.multimodal,
+        )
+
+        self.evaluation_cost = 0 if self.using_native_model else None
+        self.input_tokens = 0 if self.using_native_model else None
+        self.output_tokens = 0 if self.using_native_model else None
+        with metric_progress_indicator(
+            self,
+            async_mode=True,
+            _show_indicator=_show_indicator,
+            _in_component=_in_component,
+        ):
+            self.knowledges: List[Union[Knowledge, None]] = (
+                await self._a_generate_knowledges(test_case.turns)
+            )
+            self.verdicts: List[KnowledgeRetentionVerdict] = (
+                await self._a_generate_verdicts(test_case.turns)
+            )
+            self.score = self._calculate_score()
+            self.reason = await self._a_generate_reason()
+            self.success = self.is_successful()
+            self.verbose_logs = construct_verbose_logs(
+                self,
+                steps=[
+                    f"Knowledges:\n{prettify_list(self.knowledges)}",
+                    f"Verdicts:\n{prettify_list(self.verdicts)}",
+                    f"Score: {self.score}\nReason: {self.reason}",
+                ],
+            )
+            return self.score
+
+    async def _a_generate_reason(self) -> str:
+        if self.include_reason is False:
+            return None
+
+        attritions = []
+        for verdict in self.verdicts:
+            if verdict.verdict.strip().lower() == "yes":
+                attritions.append(verdict.reason)
+
+        prompt: dict = self._get_prompt(
+            "generate_reason",
+            attritions=attritions,
+            score=format(self.score, ".2f"),
+        )
+        return await a_generate_with_schema_and_extract(
+            metric=self,
+            prompt=prompt,
+            schema_cls=KnowledgeRetentionScoreReason,
+            extract_schema=lambda s: s.reason,
+            extract_json=lambda data: data["reason"],
+        )
+
+    def _generate_reason(self) -> str:
+        if self.include_reason is False:
+            return None
+
+        attritions = []
+        for verdict in self.verdicts:
+            if verdict.verdict.strip().lower() == "yes":
+                attritions.append(verdict.reason)
+
+        prompt: dict = self._get_prompt(
+            "generate_reason",
+            attritions=attritions,
+            score=format(self.score, ".2f"),
+        )
+        return generate_with_schema_and_extract(
+            metric=self,
+            prompt=prompt,
+            schema_cls=KnowledgeRetentionScoreReason,
+            extract_schema=lambda s: s.reason,
+            extract_json=lambda data: data["reason"],
+        )
+
+    async def _a_generate_verdicts(
+        self, turns: List[Turn]
+    ) -> List[KnowledgeRetentionVerdict]:
+        verdicts: List[KnowledgeRetentionVerdict] = []
+        for i in range(len(turns)):
+            if turns[i].role != "assistant":
+                continue
+
+            accumulated_knowledge = [
+                knowledge.data
+                for knowledge in self.knowledges[:i]
+                if knowledge is not None and knowledge.data
+            ]
+            if len(accumulated_knowledge) == 0:
+                continue
+
+            prompt = self._get_prompt(
+                "generate_verdict",
+                llm_message=turns[i].content,
+                accumulated_knowledge=accumulated_knowledge,
+            )
+            verdict = await a_generate_with_schema_and_extract(
+                metric=self,
+                prompt=prompt,
+                schema_cls=KnowledgeRetentionVerdict,
+                extract_schema=lambda s: s,
+                extract_json=lambda data: KnowledgeRetentionVerdict(**data),
+            )
+            verdicts.append(verdict)
+        return verdicts
+
+    def _generate_verdicts(
+        self, turns: List[Turn]
+    ) -> List[KnowledgeRetentionVerdict]:
+        verdicts: List[KnowledgeRetentionVerdict] = []
+        for i in range(len(turns)):
+            if turns[i].role != "assistant":
+                continue
+
+            accumulated_knowledge = [
+                knowledge.data
+                for knowledge in self.knowledges[:i]
+                if knowledge is not None and knowledge.data
+            ]
+            if len(accumulated_knowledge) == 0:
+                continue
+
+            prompt = self._get_prompt(
+                "generate_verdict",
+                llm_message=turns[i].content,
+                accumulated_knowledge=accumulated_knowledge,
+            )
+
+            verdict = generate_with_schema_and_extract(
+                metric=self,
+                prompt=prompt,
+                schema_cls=KnowledgeRetentionVerdict,
+                extract_schema=lambda s: s,
+                extract_json=lambda data: KnowledgeRetentionVerdict(**data),
+            )
+            verdicts.append(verdict)
+        return verdicts
+
+    async def _a_generate_knowledges(
+        self, turns: List[Turn]
+    ) -> List[Union[Knowledge, None]]:
+        knowledges: List[Union[Knowledge, None]] = [None] * len(turns)
+
+        for i in range(0, len(turns)):
+            if turns[i].role == "assistant":
+                continue
+
+            previous_turns = turns[:i]
+            user_message = turns[i].content
+
+            prompt = self._get_prompt(
+                "extract_data",
+                user_message=user_message,
+                previous_turns=[
+                    convert_turn_to_dict(turn) for turn in previous_turns
+                ],
+            )
+            knowledges[i] = await a_generate_with_schema_and_extract(
+                metric=self,
+                prompt=prompt,
+                schema_cls=Knowledge,
+                extract_schema=lambda s: s,
+                extract_json=lambda data: Knowledge(**data),
+            )
+
+        return knowledges
+
+    def _generate_knowledges(
+        self, turns: List[Turn]
+    ) -> List[Union[Knowledge, None]]:
+        knowledges: List[Union[Knowledge, None]] = [None] * len(turns)
+
+        for i in range(0, len(turns)):
+            if turns[i].role == "assistant":
+                continue
+
+            previous_turns = turns[:i]
+            user_message = turns[i].content
+
+            prompt = self._get_prompt(
+                "extract_data",
+                user_message=user_message,
+                previous_turns=[
+                    convert_turn_to_dict(turn) for turn in previous_turns
+                ],
+            )
+
+            knowledges[i] = generate_with_schema_and_extract(
+                metric=self,
+                prompt=prompt,
+                schema_cls=Knowledge,
+                extract_schema=lambda s: s,
+                extract_json=lambda data: Knowledge(**data),
+            )
+
+        return knowledges
+
+    def _calculate_score(self) -> float:
+        number_of_verdicts = len(self.verdicts)
+        if number_of_verdicts == 0:
+            return 1
+
+        retention_count = 0
+        for verdict in self.verdicts:
+            if verdict.verdict.strip().lower() == "no":
+                retention_count += 1
+
+        score = retention_count / number_of_verdicts
+
+        return 0 if self.strict_mode and score < self.threshold else score
+
+    @property
+    def __name__(self):
+        return "Knowledge Retention"

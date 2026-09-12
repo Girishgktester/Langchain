@@ -1,0 +1,317 @@
+import asyncio
+from typing import Optional, Union, List, Type
+
+from deepeval.metrics import BaseConversationalMetric
+from deepeval.metrics.utils import (
+    check_conversational_test_case_params,
+    construct_verbose_logs,
+    initialize_model,
+    convert_turn_to_dict,
+    a_generate_with_schema_and_extract,
+    generate_with_schema_and_extract,
+)
+from deepeval.models import DeepEvalBaseLLM
+from deepeval.metrics.indicator import metric_progress_indicator
+from deepeval.test_case import ConversationalTestCase
+from deepeval.test_case import MultiTurnParams
+from deepeval.test_case.conversational_test_case import Turn
+from deepeval.utils import get_or_create_event_loop, prettify_list
+from deepeval.metrics.conversation_completeness.schema import (
+    UserIntentions,
+    ConversationCompletenessVerdict,
+    ConversationCompletenessScoreReason,
+)
+from deepeval.templates import make_template_class
+
+
+ConversationCompletenessTemplate = make_template_class(
+    "ConversationCompletenessMetric"
+)
+
+
+class ConversationCompletenessMetric(BaseConversationalMetric):
+    _required_test_case_params = [MultiTurnParams.CONTENT, MultiTurnParams.ROLE]
+
+    def __init__(
+        self,
+        threshold: Optional[float] = 0.5,
+        model: Optional[Union[str, DeepEvalBaseLLM]] = None,
+        include_reason: bool = True,
+        async_mode: bool = True,
+        strict_mode: bool = False,
+        verbose_mode: bool = False,
+        window_size: int = 3,
+        flaky: bool = False,
+        evaluation_template: Type[
+            ConversationCompletenessTemplate
+        ] = ConversationCompletenessTemplate,
+    ):
+        self.threshold = 1 if strict_mode else threshold
+        self.model, self.using_native_model = initialize_model(model)
+        self.evaluation_model = self.model.get_model_name()
+        self.include_reason = include_reason
+        self.async_mode = async_mode
+        self.strict_mode = strict_mode
+        self.verbose_mode = verbose_mode
+        self.flaky = flaky
+        self.window_size = window_size
+        self.evaluation_template = evaluation_template
+
+    def measure(
+        self,
+        test_case: ConversationalTestCase,
+        _show_indicator: bool = True,
+        _in_component: bool = False,
+    ):
+
+        multimodal = test_case.multimodal
+        check_conversational_test_case_params(
+            test_case,
+            self._required_test_case_params,
+            self,
+            False,
+            self.model,
+            multimodal,
+        )
+
+        self.evaluation_cost = 0 if self.using_native_model else None
+        self.input_tokens = 0 if self.using_native_model else None
+        self.output_tokens = 0 if self.using_native_model else None
+        with metric_progress_indicator(
+            self, _show_indicator=_show_indicator, _in_component=_in_component
+        ):
+            if self.async_mode:
+                loop = get_or_create_event_loop()
+                loop.run_until_complete(
+                    self.a_measure(
+                        test_case,
+                        _show_indicator=False,
+                        _in_component=_in_component,
+                    )
+                )
+            else:
+                self.user_intentions = self._extract_user_intentions(
+                    test_case.turns, multimodal=multimodal
+                )
+                self.verdicts = [
+                    self._generate_verdict(
+                        turns=test_case.turns,
+                        intention=user_intention,
+                        multimodal=multimodal,
+                    )
+                    for user_intention in self.user_intentions
+                ]
+
+                self.score = self._calculate_score()
+                self.reason = self._generate_reason(multimodal=multimodal)
+                self.success = self.is_successful()
+                self.verbose_logs = construct_verbose_logs(
+                    self,
+                    steps=[
+                        f"Turns:\n{prettify_list(test_case.turns)}",
+                        f"User Intentions:\n{prettify_list(self.user_intentions)}",
+                        f"Verdicts:\n{prettify_list(self.verdicts)}",
+                        f"Score: {self.score}\nReason: {self.reason}",
+                    ],
+                )
+            return self.score
+
+    async def a_measure(
+        self,
+        test_case: ConversationalTestCase,
+        _show_indicator: bool = True,
+        _in_component: bool = False,
+    ) -> float:
+
+        multimodal = test_case.multimodal
+        check_conversational_test_case_params(
+            test_case,
+            self._required_test_case_params,
+            self,
+            False,
+            self.model,
+            multimodal,
+        )
+
+        self.evaluation_cost = 0 if self.using_native_model else None
+        self.input_tokens = 0 if self.using_native_model else None
+        self.output_tokens = 0 if self.using_native_model else None
+        with metric_progress_indicator(
+            self,
+            async_mode=True,
+            _show_indicator=_show_indicator,
+            _in_component=_in_component,
+        ):
+            self.user_intentions = await self._a_extract_user_intentions(
+                test_case.turns, multimodal=multimodal
+            )
+            self.verdicts = await asyncio.gather(
+                *[
+                    self._a_generate_verdict(
+                        turns=test_case.turns,
+                        intention=user_intention,
+                        multimodal=multimodal,
+                    )
+                    for user_intention in self.user_intentions
+                ]
+            )
+
+            self.score = self._calculate_score()
+            self.reason = await self._a_generate_reason(multimodal=multimodal)
+            self.success = self.is_successful()
+            self.verbose_logs = construct_verbose_logs(
+                self,
+                steps=[
+                    f"Turns:\n{prettify_list(test_case.turns)}",
+                    f"User Intentions:\n{prettify_list(self.user_intentions)}",
+                    f"Verdicts:\n{prettify_list(self.verdicts)}",
+                    f"Score: {self.score}\nReason: {self.reason}",
+                ],
+            )
+            return self.score
+
+    async def _a_generate_reason(self, multimodal: bool) -> str:
+        if self.include_reason is False:
+            return None
+
+        incompletenesses: List[str] = []
+        for verdict in self.verdicts:
+            if (
+                verdict is not None
+                and verdict.verdict is not None
+                and verdict.verdict.strip().lower() == "no"
+            ):
+                incompletenesses.append(verdict.reason)
+
+        prompt = self._get_prompt(
+            "generate_reason",
+            score=self.score,
+            incompletenesses=incompletenesses,
+            intentions=self.user_intentions,
+            multimodal=multimodal,
+        )
+        return await a_generate_with_schema_and_extract(
+            metric=self,
+            prompt=prompt,
+            schema_cls=ConversationCompletenessScoreReason,
+            extract_schema=lambda score_reason: score_reason.reason,
+            extract_json=lambda data: data["reason"],
+        )
+
+    def _generate_reason(self, multimodal: bool) -> str:
+        if self.include_reason is False:
+            return None
+
+        incompletenesses: List[str] = []
+        for verdict in self.verdicts:
+            if (
+                verdict is not None
+                and verdict.verdict is not None
+                and verdict.verdict.strip().lower() == "no"
+            ):
+                incompletenesses.append(verdict.reason)
+
+        prompt = self._get_prompt(
+            "generate_reason",
+            score=self.score,
+            incompletenesses=incompletenesses,
+            intentions=self.user_intentions,
+            multimodal=multimodal,
+        )
+        return generate_with_schema_and_extract(
+            metric=self,
+            prompt=prompt,
+            schema_cls=ConversationCompletenessScoreReason,
+            extract_schema=lambda score_reason: score_reason.reason,
+            extract_json=lambda data: data["reason"],
+        )
+
+    async def _a_generate_verdict(
+        self, turns: List[Turn], intention: str, multimodal: bool
+    ) -> ConversationCompletenessVerdict:
+        prompt = self._get_prompt(
+            "generate_verdicts",
+            turns=[convert_turn_to_dict(turn) for turn in turns],
+            intention=intention,
+            multimodal=multimodal,
+        )
+
+        return await a_generate_with_schema_and_extract(
+            metric=self,
+            prompt=prompt,
+            schema_cls=ConversationCompletenessVerdict,
+            extract_schema=lambda r: r,
+            extract_json=lambda data: ConversationCompletenessVerdict(**data),
+        )
+
+    def _generate_verdict(
+        self, turns: List[Turn], intention: str, multimodal: bool
+    ) -> ConversationCompletenessVerdict:
+        prompt = self._get_prompt(
+            "generate_verdicts",
+            turns=[convert_turn_to_dict(turn) for turn in turns],
+            intention=intention,
+            multimodal=multimodal,
+        )
+        return generate_with_schema_and_extract(
+            metric=self,
+            prompt=prompt,
+            schema_cls=ConversationCompletenessVerdict,
+            extract_schema=lambda r: r,
+            extract_json=lambda data: ConversationCompletenessVerdict(**data),
+        )
+
+    async def _a_extract_user_intentions(
+        self, turns: List[Turn], multimodal: bool
+    ) -> List[str]:
+        prompt = self._get_prompt(
+            "extract_user_intentions",
+            turns=[convert_turn_to_dict(turn) for turn in turns],
+            multimodal=multimodal,
+        )
+
+        return await a_generate_with_schema_and_extract(
+            metric=self,
+            prompt=prompt,
+            schema_cls=UserIntentions,
+            extract_schema=lambda r: r.intentions,
+            extract_json=lambda data: UserIntentions(**data).intentions,
+        )
+
+    def _extract_user_intentions(
+        self, turns: List[Turn], multimodal: bool
+    ) -> List[str]:
+        prompt = self._get_prompt(
+            "extract_user_intentions",
+            turns=[convert_turn_to_dict(turn) for turn in turns],
+            multimodal=multimodal,
+        )
+        return generate_with_schema_and_extract(
+            metric=self,
+            prompt=prompt,
+            schema_cls=UserIntentions,
+            extract_schema=lambda r: r.intentions,
+            extract_json=lambda data: UserIntentions(**data).intentions,
+        )
+
+    def _calculate_score(self) -> float:
+        # Filter out None verdicts that can occur during parallel evaluation
+        # when verdict generation fails (e.g., LLM timeout, parse error).
+        valid_verdicts = [
+            v for v in self.verdicts if v is not None and v.verdict is not None
+        ]
+        number_of_verdicts = len(valid_verdicts)
+        if number_of_verdicts == 0:
+            return 1
+
+        relevant_count = 0
+        for verdict in valid_verdicts:
+            if verdict.verdict.strip().lower() != "no":
+                relevant_count += 1
+
+        score = relevant_count / number_of_verdicts
+        return 0 if self.strict_mode and score < self.threshold else score
+
+    @property
+    def __name__(self):
+        return "Conversation Completeness"

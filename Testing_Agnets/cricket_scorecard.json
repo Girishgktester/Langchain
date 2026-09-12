@@ -1,0 +1,567 @@
+{
+  "match": {
+    "match_id": "IND-INTRA-ODI-2026-09-05",
+    "title": "India Intra-Squad Practice Match",
+    "format": "ODI (50 overs per side)",
+    "series": "India Intra-Squad Warm-up Series 2026",
+    "match_number": 3,
+    "date": "2026-09-05",
+    "start_time_local": "09:30",
+    "venue": {
+      "name": "National Cricket Academy Ground",
+      "city": "Bengaluru",
+      "state": "Karnataka",
+      "country": "India",
+      "capacity": 5000,
+      "pitch": "Hard surface, good bounce, some early seam movement",
+      "outfield": "Fast and true"
+    },
+    "weather": {
+      "condition": "Partly cloudy",
+      "temperature_c": 27,
+      "humidity_percent": 68,
+      "wind_kmph": 12
+    },
+    "toss": {
+      "winner": "India Red",
+      "decision": "bat",
+      "summary": "India Red won the toss and elected to bat first"
+    },
+    "officials": {
+      "umpires": ["V. Sundaram", "A. Deshmukh"],
+      "tv_umpire": "R. Menon",
+      "match_referee": "S. Krishnamurthy",
+      "scorers": ["P. Nair", "L. Fernandes"]
+    },
+    "captains": {
+      "india_red": "Rohit Sharma",
+      "india_blue": "KL Rahul"
+    },
+    "wicketkeepers": {
+      "india_red": "Rishabh Pant",
+      "india_blue": "KL Rahul"
+    },
+    "overs_per_side": 50,
+    "result": {
+      "winner": "India Blue",
+      "margin": "5 wickets",
+      "target": 288,
+      "balls_remaining": 9,
+      "remarks": "India Blue chased down 288 with 9 balls to spare"
+    },
+    "player_of_the_match": {
+      "name": "Tilak Varma",
+      "team": "India Blue",
+      "performance": "61 runs off 60 balls",
+      "reason": "Counter-attacking innings in a winning cause"
+    }
+  },
+  "teams": [
+    {
+      "name": "India Red",
+      "short_name": "RED",
+      "captain": "Rohit Sharma",
+      "wicketkeeper": "Rishabh Pant",
+      "playing_xi": [
+        "Rohit Sharma",
+        "Shubman Gill",
+        "Virat Kohli",
+        "Suryakumar Yadav",
+        "Rishabh Pant",
+        "Hardik Pandya",
+        "Axar Patel",
+        "Arshdeep Singh",
+        "Mohammed Shami",
+        "Yuzvendra Chahal",
+        "Prasidh Krishna"
+      ],
+      "bench": [
+        "Ishan Kishan",
+        "Ruturaj Gaikwad",
+        "Deepak Chahar"
+      ]
+    },
+    {
+      "name": "India Blue",
+      "short_name": "BLU",
+      "captain": "KL Rahul",
+      "wicketkeeper": "KL Rahul",
+      "playing_xi": [
+        "Yashasvi Jaiswal",
+        "Abhishek Sharma",
+        "Shreyas Iyer",
+        "Tilak Varma",
+        "KL Rahul",
+        "Rinku Singh",
+        "Washington Sundar",
+        "Ravindra Jadeja",
+        "Jasprit Bumrah",
+        "Mohammed Siraj",
+        "Kuldeep Yadav"
+      ],
+      "bench": [
+        "Sai Sudharsan",
+        "Nitish Kumar Reddy",
+        "Avesh Khan"
+      ]
+    }
+  ],
+  "innings": [
+    {
+      "innings_number": 1,
+      "batting_team": "India Red",
+      "bowling_team": "India Blue",
+      "runs": 287,
+      "wickets": 9,
+      "overs": "50.0",
+      "run_rate": 5.74,
+      "extras": {
+        "byes": 1,
+        "leg_byes": 4,
+        "wides": 7,
+        "no_balls": 1,
+        "total": 13
+      },
+      "batting": [
+        {
+          "position": 1,
+          "batter": "Rohit Sharma",
+          "dismissal": {"type": "caught", "bowler": "Jasprit Bumrah", "fielder": "KL Rahul"},
+          "runs": 34,
+          "balls": 30,
+          "fours": 5,
+          "sixes": 1,
+          "strike_rate": 113.33,
+          "minutes": 38
+        },
+        {
+          "position": 2,
+          "batter": "Shubman Gill",
+          "dismissal": {"type": "bowled", "bowler": "Mohammed Siraj"},
+          "runs": 61,
+          "balls": 78,
+          "fours": 7,
+          "sixes": 0,
+          "strike_rate": 78.21,
+          "minutes": 96
+        },
+        {
+          "position": 3,
+          "batter": "Virat Kohli",
+          "dismissal": {"type": "caught", "bowler": "Ravindra Jadeja", "fielder": "Yashasvi Jaiswal"},
+          "runs": 68,
+          "balls": 87,
+          "fours": 6,
+          "sixes": 1,
+          "strike_rate": 78.16,
+          "minutes": 104
+        },
+        {
+          "position": 4,
+          "batter": "Suryakumar Yadav",
+          "dismissal": {"type": "caught_and_bowled", "bowler": "Kuldeep Yadav"},
+          "runs": 45,
+          "balls": 39,
+          "fours": 3,
+          "sixes": 2,
+          "strike_rate": 115.38,
+          "minutes": 47
+        },
+        {
+          "position": 5,
+          "batter": "Rishabh Pant",
+          "dismissal": {"type": "run_out", "fielder": "Ravindra Jadeja", "assist": "KL Rahul"},
+          "runs": 28,
+          "balls": 26,
+          "fours": 2,
+          "sixes": 1,
+          "strike_rate": 107.69,
+          "minutes": 32
+        },
+        {
+          "position": 6,
+          "batter": "Hardik Pandya",
+          "dismissal": {"type": "caught", "bowler": "Jasprit Bumrah", "fielder": "Mohammed Siraj"},
+          "runs": 18,
+          "balls": 15,
+          "fours": 1,
+          "sixes": 1,
+          "strike_rate": 120.00,
+          "minutes": 18
+        },
+        {
+          "position": 7,
+          "batter": "Axar Patel",
+          "dismissal": {"type": "caught", "bowler": "Kuldeep Yadav", "fielder": "Washington Sundar"},
+          "runs": 12,
+          "balls": 10,
+          "fours": 1,
+          "sixes": 0,
+          "strike_rate": 120.00,
+          "minutes": 14
+        },
+        {
+          "position": 8,
+          "batter": "Arshdeep Singh",
+          "dismissal": {"type": "not_out"},
+          "runs": 5,
+          "balls": 6,
+          "fours": 0,
+          "sixes": 0,
+          "strike_rate": 83.33,
+          "minutes": 9
+        },
+        {
+          "position": 9,
+          "batter": "Mohammed Shami",
+          "dismissal": {"type": "bowled", "bowler": "Jasprit Bumrah"},
+          "runs": 1,
+          "balls": 4,
+          "fours": 0,
+          "sixes": 0,
+          "strike_rate": 25.00,
+          "minutes": 5
+        },
+        {
+          "position": 10,
+          "batter": "Yuzvendra Chahal",
+          "dismissal": {"type": "run_out", "fielder": "Tilak Varma"},
+          "runs": 2,
+          "balls": 4,
+          "fours": 0,
+          "sixes": 0,
+          "strike_rate": 50.00,
+          "minutes": 4
+        },
+        {
+          "position": 11,
+          "batter": "Prasidh Krishna",
+          "dismissal": {"type": "not_out"},
+          "runs": 0,
+          "balls": 2,
+          "fours": 0,
+          "sixes": 0,
+          "strike_rate": 0.00,
+          "minutes": 2
+        }
+      ],
+      "did_not_bat": [],
+      "bowling": [
+        {
+          "position": 1,
+          "bowler": "Jasprit Bumrah",
+          "overs": "10.0",
+          "maidens": 0,
+          "runs": 42,
+          "wickets": 3,
+          "economy": 4.20,
+          "wides": 1,
+          "no_balls": 0,
+          "dot_balls": 38
+        },
+        {
+          "position": 2,
+          "bowler": "Mohammed Siraj",
+          "overs": "10.0",
+          "maidens": 1,
+          "runs": 58,
+          "wickets": 1,
+          "economy": 5.80,
+          "wides": 2,
+          "no_balls": 0,
+          "dot_balls": 33
+        },
+        {
+          "position": 3,
+          "bowler": "Kuldeep Yadav",
+          "overs": "10.0",
+          "maidens": 0,
+          "runs": 51,
+          "wickets": 2,
+          "economy": 5.10,
+          "wides": 1,
+          "no_balls": 0,
+          "dot_balls": 34
+        },
+        {
+          "position": 4,
+          "bowler": "Ravindra Jadeja",
+          "overs": "10.0",
+          "maidens": 0,
+          "runs": 63,
+          "wickets": 1,
+          "economy": 6.30,
+          "wides": 1,
+          "no_balls": 1,
+          "dot_balls": 30
+        },
+        {
+          "position": 5,
+          "bowler": "Washington Sundar",
+          "overs": "7.0",
+          "maidens": 0,
+          "runs": 44,
+          "wickets": 0,
+          "economy": 6.29,
+          "wides": 2,
+          "no_balls": 0,
+          "dot_balls": 18
+        },
+        {
+          "position": 6,
+          "bowler": "Tilak Varma",
+          "overs": "3.0",
+          "maidens": 0,
+          "runs": 24,
+          "wickets": 0,
+          "economy": 8.00,
+          "wides": 0,
+          "no_balls": 0,
+          "dot_balls": 5
+        }
+      ],
+      "did_not_bowl": ["Yashasvi Jaiswal", "Abhishek Sharma", "Shreyas Iyer", "KL Rahul", "Rinku Singh"],
+      "fall_of_wickets": [
+        {"wicket": 1, "score": 42, "over": "5.3", "batter": "Rohit Sharma"},
+        {"wicket": 2, "score": 118, "over": "18.4", "batter": "Shubman Gill"},
+        {"wicket": 3, "score": 201, "over": "33.1", "batter": "Virat Kohli"},
+        {"wicket": 4, "score": 233, "over": "37.5", "batter": "Suryakumar Yadav"},
+        {"wicket": 5, "score": 258, "over": "42.2", "batter": "Rishabh Pant"},
+        {"wicket": 6, "score": 270, "over": "44.6", "batter": "Hardik Pandya"},
+        {"wicket": 7, "score": 276, "over": "46.3", "batter": "Axar Patel"},
+        {"wicket": 8, "score": 283, "over": "48.1", "batter": "Mohammed Shami"},
+        {"wicket": 9, "score": 285, "over": "48.5", "batter": "Yuzvendra Chahal"}
+      ],
+      "partnerships": [
+        {"wicket": 1, "batters": ["Rohit Sharma", "Shubman Gill"], "runs": 42},
+        {"wicket": 2, "batters": ["Shubman Gill", "Virat Kohli"], "runs": 76},
+        {"wicket": 3, "batters": ["Virat Kohli", "Suryakumar Yadav"], "runs": 83},
+        {"wicket": 4, "batters": ["Suryakumar Yadav", "Rishabh Pant"], "runs": 32},
+        {"wicket": 5, "batters": ["Rishabh Pant", "Hardik Pandya"], "runs": 25},
+        {"wicket": 6, "batters": ["Hardik Pandya", "Axar Patel"], "runs": 12},
+        {"wicket": 7, "batters": ["Axar Patel", "Arshdeep Singh"], "runs": 6},
+        {"wicket": 8, "batters": ["Arshdeep Singh", "Mohammed Shami"], "runs": 7},
+        {"wicket": 9, "batters": ["Mohammed Shami", "Yuzvendra Chahal"], "runs": 2},
+        {"wicket": 10, "batters": ["Arshdeep Singh", "Prasidh Krishna"], "runs": 2, "unbroken": true}
+      ],
+      "phase_scores": [
+        {"phase": "powerplay", "overs": "1-10", "runs": 52, "wickets": 1},
+        {"phase": "middle", "overs": "11-40", "runs": 181, "wickets": 3},
+        {"phase": "death", "overs": "41-50", "runs": 54, "wickets": 5}
+      ],
+      "top_scorers": [
+        {"batter": "Virat Kohli", "runs": 68, "balls": 87},
+        {"batter": "Shubman Gill", "runs": 61, "balls": 78},
+        {"batter": "Suryakumar Yadav", "runs": 45, "balls": 39}
+      ],
+      "best_bowling": [
+        {"bowler": "Jasprit Bumrah", "figures": "10-0-42-3"},
+        {"bowler": "Kuldeep Yadav", "figures": "10-0-51-2"},
+        {"bowler": "Mohammed Siraj", "figures": "10-1-58-1"}
+      ]
+    },
+    {
+      "innings_number": 2,
+      "batting_team": "India Blue",
+      "bowling_team": "India Red",
+      "target": 288,
+      "runs": 291,
+      "wickets": 5,
+      "overs": "48.3",
+      "run_rate": 6.00,
+      "extras": {
+        "byes": 0,
+        "leg_byes": 3,
+        "wides": 9,
+        "no_balls": 1,
+        "total": 13
+      },
+      "batting": [
+        {
+          "position": 1,
+          "batter": "Yashasvi Jaiswal",
+          "dismissal": {"type": "caught", "bowler": "Arshdeep Singh", "fielder": "Rishabh Pant"},
+          "runs": 42,
+          "balls": 42,
+          "fours": 6,
+          "sixes": 1,
+          "strike_rate": 100.00,
+          "minutes": 50
+        },
+        {
+          "position": 2,
+          "batter": "Abhishek Sharma",
+          "dismissal": {"type": "caught", "bowler": "Yuzvendra Chahal", "fielder": "Virat Kohli"},
+          "runs": 58,
+          "balls": 55,
+          "fours": 5,
+          "sixes": 3,
+          "strike_rate": 105.45,
+          "minutes": 64
+        },
+        {
+          "position": 3,
+          "batter": "Shreyas Iyer",
+          "dismissal": {"type": "stumped", "bowler": "Yuzvendra Chahal", "fielder": "Rishabh Pant"},
+          "runs": 33,
+          "balls": 45,
+          "fours": 2,
+          "sixes": 0,
+          "strike_rate": 73.33,
+          "minutes": 52
+        },
+        {
+          "position": 4,
+          "batter": "Tilak Varma",
+          "dismissal": {"type": "caught", "bowler": "Mohammed Shami", "fielder": "Shubman Gill"},
+          "runs": 61,
+          "balls": 60,
+          "fours": 4,
+          "sixes": 2,
+          "strike_rate": 101.67,
+          "minutes": 74
+        },
+        {
+          "position": 5,
+          "batter": "KL Rahul",
+          "dismissal": {"type": "not_out"},
+          "runs": 47,
+          "balls": 55,
+          "fours": 3,
+          "sixes": 1,
+          "strike_rate": 85.45,
+          "minutes": 66
+        },
+        {
+          "position": 6,
+          "batter": "Rinku Singh",
+          "dismissal": {"type": "caught", "bowler": "Arshdeep Singh", "fielder": "Hardik Pandya"},
+          "runs": 29,
+          "balls": 22,
+          "fours": 2,
+          "sixes": 2,
+          "strike_rate": 131.82,
+          "minutes": 24
+        },
+        {
+          "position": 7,
+          "batter": "Washington Sundar",
+          "dismissal": {"type": "not_out"},
+          "runs": 8,
+          "balls": 13,
+          "fours": 0,
+          "sixes": 0,
+          "strike_rate": 61.54,
+          "minutes": 12
+        }
+      ],
+      "did_not_bat": ["Ravindra Jadeja", "Jasprit Bumrah", "Mohammed Siraj", "Kuldeep Yadav"],
+      "bowling": [
+        {
+          "position": 1,
+          "bowler": "Mohammed Shami",
+          "overs": "10.0",
+          "maidens": 0,
+          "runs": 58,
+          "wickets": 1,
+          "economy": 5.80,
+          "wides": 2,
+          "no_balls": 0,
+          "dot_balls": 32
+        },
+        {
+          "position": 2,
+          "bowler": "Arshdeep Singh",
+          "overs": "9.3",
+          "maidens": 0,
+          "runs": 71,
+          "wickets": 2,
+          "economy": 7.47,
+          "wides": 3,
+          "no_balls": 1,
+          "dot_balls": 26
+        },
+        {
+          "position": 3,
+          "bowler": "Prasidh Krishna",
+          "overs": "9.0",
+          "maidens": 0,
+          "runs": 66,
+          "wickets": 0,
+          "economy": 7.33,
+          "wides": 2,
+          "no_balls": 0,
+          "dot_balls": 22
+        },
+        {
+          "position": 4,
+          "bowler": "Yuzvendra Chahal",
+          "overs": "10.0",
+          "maidens": 1,
+          "runs": 48,
+          "wickets": 2,
+          "economy": 4.80,
+          "wides": 1,
+          "no_balls": 0,
+          "dot_balls": 40
+        },
+        {
+          "position": 5,
+          "bowler": "Axar Patel",
+          "overs": "10.0",
+          "maidens": 0,
+          "runs": 45,
+          "wickets": 0,
+          "economy": 4.50,
+          "wides": 1,
+          "no_balls": 0,
+          "dot_balls": 39
+        }
+      ],
+      "did_not_bowl": ["Rohit Sharma", "Shubman Gill", "Virat Kohli", "Suryakumar Yadav", "Rishabh Pant", "Hardik Pandya"],
+      "fall_of_wickets": [
+        {"wicket": 1, "score": 78, "over": "9.2", "batter": "Yashasvi Jaiswal"},
+        {"wicket": 2, "score": 131, "over": "18.5", "batter": "Abhishek Sharma"},
+        {"wicket": 3, "score": 161, "over": "26.4", "batter": "Shreyas Iyer"},
+        {"wicket": 4, "score": 241, "over": "40.1", "batter": "Tilak Varma"},
+        {"wicket": 5, "score": 274, "over": "45.6", "batter": "Rinku Singh"}
+      ],
+      "partnerships": [
+        {"wicket": 1, "batters": ["Yashasvi Jaiswal", "Abhishek Sharma"], "runs": 78},
+        {"wicket": 2, "batters": ["Abhishek Sharma", "Shreyas Iyer"], "runs": 53},
+        {"wicket": 3, "batters": ["Shreyas Iyer", "Tilak Varma"], "runs": 30},
+        {"wicket": 4, "batters": ["Tilak Varma", "KL Rahul"], "runs": 80},
+        {"wicket": 5, "batters": ["KL Rahul", "Rinku Singh"], "runs": 33},
+        {"wicket": 6, "batters": ["KL Rahul", "Washington Sundar"], "runs": 17, "unbroken": true}
+      ],
+      "phase_scores": [
+        {"phase": "powerplay", "overs": "1-10", "runs": 78, "wickets": 1},
+        {"phase": "middle", "overs": "11-40", "runs": 162, "wickets": 2},
+        {"phase": "death", "overs": "41-48.3", "runs": 51, "wickets": 2}
+      ],
+      "top_scorers": [
+        {"batter": "Tilak Varma", "runs": 61, "balls": 60},
+        {"batter": "Abhishek Sharma", "runs": 58, "balls": 55},
+        {"batter": "KL Rahul", "runs": 47, "balls": 55}
+      ],
+      "best_bowling": [
+        {"bowler": "Yuzvendra Chahal", "figures": "10-1-48-2"},
+        {"bowler": "Arshdeep Singh", "figures": "9.3-0-71-2"},
+        {"bowler": "Mohammed Shami", "figures": "10-0-58-1"}
+      ]
+    }
+  ],
+  "match_summary": {
+    "toss": "India Red won the toss and chose to bat",
+    "first_innings": "India Red 287/9 (50 overs)",
+    "second_innings": "India Blue 291/5 (48.3 overs)",
+    "result": "India Blue won by 5 wickets",
+    "highest_score": {"batter": "Virat Kohli", "team": "India Red", "runs": 68},
+    "best_bowling_figures": {"bowler": "Jasprit Bumrah", "team": "India Blue", "figures": "10-0-42-3"},
+    "most_sixes": {"batter": "Abhishek Sharma", "team": "India Blue", "sixes": 3},
+    "most_fours": {"batter": "Shubman Gill", "team": "India Red", "fours": 7},
+    "total_runs_in_match": 578,
+    "total_wickets_in_match": 14,
+    "total_extras_in_match": 26
+  }
+}

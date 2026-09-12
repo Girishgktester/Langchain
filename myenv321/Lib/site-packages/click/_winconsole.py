@@ -28,7 +28,6 @@ from ctypes.wintypes import DWORD
 from ctypes.wintypes import HANDLE
 from ctypes.wintypes import LPCWSTR
 from ctypes.wintypes import LPWSTR
-from gettext import gettext as _
 
 from ._compat import _NonClosingTextIOWrapper
 
@@ -153,7 +152,7 @@ class _WindowsConsoleReader(_WindowsConsoleRawIOBase):
             # wait for KeyboardInterrupt
             time.sleep(0.1)
         if not rv:
-            raise OSError(_("Windows error: {error}").format(error=GetLastError()))
+            raise OSError(f"Windows error: {GetLastError()}")
 
         if buffer[0] == EOF:
             return 0
@@ -170,7 +169,7 @@ class _WindowsConsoleWriter(_WindowsConsoleRawIOBase):
             return "ERROR_SUCCESS"
         elif errno == ERROR_NOT_ENOUGH_MEMORY:
             return "ERROR_NOT_ENOUGH_MEMORY"
-        return _("Windows error: {error}").format(error=errno)
+        return f"Windows error {errno}"
 
     def write(self, b: Buffer) -> int:
         bytes_to_be_written = len(b)
