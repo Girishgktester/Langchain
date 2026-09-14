@@ -1,0 +1,9 @@
+{
+    "dependencies": [
+        "."
+    ],
+    "env": ".env",
+    "graphs": {
+        "agent": "./LangSmithStudio/simpleGraph.py:graph"
+    }
+}
